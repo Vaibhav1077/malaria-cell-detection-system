@@ -1,0 +1,12 @@
+{
+  "data_dir": "data/cell_images",
+  "image_size": 32,
+  "model_type": "logistic_regression",
+  "seed": 42,
+  "train_split": 0.8,
+  "val_split": 0.1,
+  "test_split": 0.1,
+  "artifacts_dir": "artifacts",
+  "model_dir": "models",
+  "model_name": "malaria_ml.joblib"
+}

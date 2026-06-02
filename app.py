@@ -66,10 +66,13 @@ else:
     demo_choice = st.selectbox("Choose a tested sample", ["None", *DEMO_IMAGES.keys()])
     if demo_choice != "None":
         demo_path = DEMO_IMAGES[demo_choice]
-        image = Image.open(demo_path)
-        st.image(image, caption=demo_path.name, use_container_width=True)
-        label, confidence, probabilities = predict_image(model, class_names, image)
-        show_prediction(label, confidence, probabilities, class_names)
+        if not demo_path.exists():
+            st.info("Demo dataset images are not available. Upload an image or add the dataset under `data/cell_images`.")
+        else:
+            image = Image.open(demo_path)
+            st.image(image, caption=demo_path.name, use_container_width=True)
+            label, confidence, probabilities = predict_image(model, class_names, image)
+            show_prediction(label, confidence, probabilities, class_names)
 
     st.divider()
     uploaded_file = st.file_uploader("Upload image", type=["png", "jpg", "jpeg"])

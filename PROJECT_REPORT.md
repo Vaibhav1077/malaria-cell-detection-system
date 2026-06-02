@@ -111,7 +111,7 @@ Main libraries:
 To train the model:
 
 ```powershell
-cd "C:\Users\iamva\OneDrive\Documents\New project"
+cd malaria-cell-detection-system
 .venv\Scripts\activate
 python train.py --data-dir data/cell_images --model-type svm
 ```
@@ -192,4 +192,3 @@ The model is evaluated using:
 ## 18. Conclusion
 
 This project demonstrates a classical Machine Learning approach for malaria detection from blood smear cell images. It avoids Deep Learning and uses handcrafted image features with ML classifiers. The system provides training, evaluation, prediction, and a simple web interface, making it suitable for academic presentation and learning core ML workflow.
-
