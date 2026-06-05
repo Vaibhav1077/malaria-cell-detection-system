@@ -171,3 +171,5 @@ ROC-AUC:             86.94%
 * This project uses classical machine learning, not deep learning.
 * The dataset is intentionally not committed to GitHub because of its size.
 * If you retrain the model, generated files in `models/` and `artifacts/` will be updated locally.
+
+<!-- dataset info -->
