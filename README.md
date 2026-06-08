@@ -173,3 +173,4 @@ ROC-AUC:             86.94%
 * If you retrain the model, generated files in `models/` and `artifacts/` will be updated locally.
 
 <!-- dataset info -->
+<!-- model arch -->
