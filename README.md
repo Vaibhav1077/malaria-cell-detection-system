@@ -176,3 +176,4 @@ ROC-AUC:             86.94%
 <!-- model arch -->
 <!-- augmentation -->
 <!-- training logs -->
+<!-- model eval -->
