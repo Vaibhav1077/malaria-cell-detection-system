@@ -180,3 +180,4 @@ ROC-AUC:             86.94%
 <!-- streamlit ui -->
 <!-- grad cam -->
 <!-- batch predict -->
+<!-- deploy notes -->
