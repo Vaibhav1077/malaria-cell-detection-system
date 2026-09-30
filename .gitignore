@@ -7,8 +7,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .pycache_check/
-artifacts/
-models/
+# artifacts/ and models/ are tracked so deployment works
+# artifacts/
+# models/
 reports/
 data/
 26.0.1
