@@ -4,29 +4,29 @@ import json
 import os
 from pathlib import Path
 
-_matplotlib_cache_dir = Path("/tmp") / "matplotlib-cache"
-_matplotlib_cache_dir.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("MPLCONFIGDIR", str(_matplotlib_cache_dir))
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
-    roc_curve,
-)
-
 from src.config import TrainConfig
 
 
 def evaluate_and_save_reports(model, X_val, X_test, y_val, y_test, class_names, config: TrainConfig) -> None:
+    # Lazy imports - only loaded during training, not when app.py imports src
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    from sklearn.metrics import (
+        accuracy_score,
+        classification_report,
+        confusion_matrix,
+        f1_score,
+        precision_score,
+        recall_score,
+        roc_auc_score,
+        roc_curve,
+    )
+
+    _matplotlib_cache_dir = Path("/tmp") / "matplotlib-cache"
+    _matplotlib_cache_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("MPLCONFIGDIR", str(_matplotlib_cache_dir))
     y_true = y_test
     y_pred = model.predict(X_test)
     y_scores = model.predict_proba(X_test)[:, 1]
