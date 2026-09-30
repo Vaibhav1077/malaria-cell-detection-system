@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
+# Limit CPU threads — keeps Streamlit Cloud throttle away
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -18,367 +20,182 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ═══════════════════════════════════════════════════════════════
-#  GLOBAL CSS
-# ═══════════════════════════════════════════════════════════════
+# ── CSS ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-* { font-family: 'Inter', sans-serif !important; }
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-/* ── Base ── */
-.stApp {
-    background: #050810;
-    color: #e2e8f0;
-}
-section[data-testid="stSidebar"] { display: none; }
+.stApp { background: #080c14; }
+
+/* hide streamlit chrome */
 #MainMenu, footer, .stDeployButton { visibility: hidden; }
-.block-container { padding: 0 2rem 4rem 2rem !important; max-width: 1200px; }
+header[data-testid="stHeader"] { background: transparent; }
 
-/* ── Animated gradient top bar ── */
-.top-bar {
-    height: 4px;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f43f5e, #f97316, #eab308, #22c55e, #06b6d4, #6366f1);
-    background-size: 300% 100%;
-    animation: shimmer 4s linear infinite;
-    margin-bottom: 0;
-    border-radius: 0 0 8px 8px;
-}
-@keyframes shimmer { 0%{background-position:0% 0%} 100%{background-position:300% 0%} }
-
-/* ── Hero ── */
-.hero-wrap {
-    position: relative;
-    background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(236,72,153,0.12) 0%, transparent 55%),
-                radial-gradient(ellipse at 60% 80%, rgba(6,182,212,0.10) 0%, transparent 50%),
-                linear-gradient(135deg, #0d1117 0%, #0f172a 100%);
-    border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 24px;
-    padding: 60px 48px 52px;
+/* ── hero ── */
+.hero {
+    background: linear-gradient(135deg, #0d1b2a 0%, #112240 60%, #0a3d62 100%);
+    border: 1px solid #1e3a5f;
+    border-radius: 20px;
+    padding: 52px 40px 44px;
     text-align: center;
-    margin: 28px 0 40px;
-    overflow: hidden;
-}
-.hero-wrap::before {
-    content:'';
-    position:absolute; inset:0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    opacity:.5;
-}
-.hero-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(99,102,241,0.12);
-    border: 1px solid rgba(99,102,241,0.3);
-    border-radius: 100px;
-    padding: 6px 16px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #818cf8;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 36px;
 }
 .hero-title {
-    font-size: clamp(2rem, 4vw, 3.2rem);
-    font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: -1px;
-    margin: 0 0 18px;
-    background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 40%, #a5b4fc 70%, #818cf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #f0f4ff;
+    margin: 0 0 10px;
+    letter-spacing: -0.5px;
 }
 .hero-sub {
     font-size: 1.05rem;
-    color: #94a3b8;
-    max-width: 560px;
-    margin: 0 auto 28px;
-    line-height: 1.7;
-    font-weight: 400;
+    color: #8899aa;
+    max-width: 580px;
+    margin: 0 auto 20px;
+    line-height: 1.6;
 }
-.badge-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .badge {
-    background: rgba(15,23,42,0.8);
-    border: 1px solid rgba(148,163,184,0.15);
-    border-radius: 100px;
-    padding: 6px 14px;
-    font-size: 0.78rem;
-    color: #94a3b8;
-    font-weight: 500;
+    display: inline-block;
+    background: rgba(96,165,250,0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(96,165,250,0.25);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    margin: 4px 3px;
+    letter-spacing: 0.4px;
 }
-.badge span { margin-right: 5px; }
 
-/* ── Section title ── */
+/* ── section title ── */
 .sec-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     font-size: 1.05rem;
     font-weight: 700;
-    color: #f1f5f9;
-    margin: 40px 0 18px;
-}
-.sec-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(99,102,241,0.4), transparent);
+    color: #c8d8e8;
+    letter-spacing: 0.3px;
+    margin: 36px 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1e2d40;
 }
 
-/* ── Metric cards ── */
-.metric-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 8px; }
-.metric-card {
-    background: linear-gradient(145deg, #0d1117, #111827);
-    border: 1px solid rgba(148,163,184,0.08);
-    border-radius: 16px;
-    padding: 22px 16px;
+/* ── metric cards ── */
+.metric-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+.mcard {
+    flex: 1;
+    min-width: 110px;
+    background: #0d1b2a;
+    border: 1px solid #1e3a5f;
+    border-radius: 14px;
+    padding: 20px 12px;
     text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, border-color 0.2s;
 }
-.metric-card::before {
-    content:'';
-    position:absolute;
-    top:0; left:0; right:0;
-    height:3px;
-    border-radius:16px 16px 0 0;
-}
-.mc-blue::before   { background: linear-gradient(90deg,#6366f1,#8b5cf6); }
-.mc-pink::before   { background: linear-gradient(90deg,#ec4899,#f43f5e); }
-.mc-green::before  { background: linear-gradient(90deg,#10b981,#06b6d4); }
-.mc-orange::before { background: linear-gradient(90deg,#f97316,#eab308); }
-.mc-cyan::before   { background: linear-gradient(90deg,#06b6d4,#3b82f6); }
-.metric-val {
-    font-size: 2.1rem;
+.mcard-val {
+    font-size: 1.75rem;
     font-weight: 800;
-    color: #f1f5f9;
-    letter-spacing: -1px;
+    color: #60a5fa;
     line-height: 1;
 }
-.mc-blue   .metric-val { color: #a5b4fc; }
-.mc-pink   .metric-val { color: #f9a8d4; }
-.mc-green  .metric-val { color: #6ee7b7; }
-.mc-orange .metric-val { color: #fed7aa; }
-.mc-cyan   .metric-val { color: #a5f3fc; }
-.metric-lbl {
+.mcard-lbl {
     font-size: 0.72rem;
-    color: #64748b;
-    margin-top: 6px;
+    color: #4a6580;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
+    letter-spacing: 0.8px;
+    margin-top: 6px;
 }
 
-/* ── Info cards ── */
-.info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
-.info-card {
-    background: linear-gradient(145deg, #0d1117, #111827);
-    border: 1px solid rgba(148,163,184,0.08);
-    border-radius: 16px;
-    padding: 26px 24px;
+/* ── info cards ── */
+.icard {
+    background: #0d1b2a;
+    border: 1px solid #1e3a5f;
+    border-radius: 14px;
+    padding: 24px 20px;
+    height: 100%;
 }
-.info-card-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.icard-title {
     font-size: 0.92rem;
     font-weight: 700;
-    color: #e2e8f0;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(148,163,184,0.08);
+    color: #c8d8e8;
+    margin: 0 0 14px;
 }
-.info-icon {
-    width: 34px; height: 34px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-.ic-purple { background: rgba(99,102,241,0.15); }
-.ic-blue   { background: rgba(6,182,212,0.15); }
-.ic-rose   { background: rgba(244,63,94,0.15); }
-.info-list {
-    list-style: none;
-    padding: 0; margin: 0;
-}
-.info-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
+.icard ul {
+    color: #7a9ab8;
     font-size: 0.86rem;
-    color: #94a3b8;
-    padding: 5px 0;
-    line-height: 1.5;
-}
-.info-list li::before {
-    content: '›';
-    color: #6366f1;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
+    padding-left: 18px;
+    margin: 0;
+    line-height: 2;
 }
 
-/* ── Upload zone ── */
-.upload-outer {
-    background: linear-gradient(145deg, #0d1117, #111827);
-    border: 1px solid rgba(148,163,184,0.08);
-    border-radius: 20px;
-    padding: 28px;
-}
-.drop-placeholder {
-    border: 2px dashed rgba(99,102,241,0.3);
-    border-radius: 14px;
-    padding: 56px 24px;
-    text-align: center;
-    background: rgba(99,102,241,0.03);
-}
-.drop-icon { font-size: 3.2rem; margin-bottom: 12px; }
-.drop-text { color: #64748b; font-size: 0.92rem; margin: 4px 0; }
-.drop-hint { color: #475569; font-size: 0.78rem; }
-
-/* ── Result panel ── */
-.result-outer {
-    background: linear-gradient(145deg, #0d1117, #111827);
-    border: 1px solid rgba(148,163,184,0.08);
-    border-radius: 20px;
-    padding: 28px;
-    height: 100%;
-}
-.result-waiting {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 260px;
-    color: #334155;
-    text-align: center;
-    gap: 12px;
-}
-.result-waiting-icon { font-size: 3rem; opacity: 0.4; }
-.result-waiting-text { font-size: 0.9rem; }
-
-.result-card-parasitized {
-    background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(185,28,28,0.05));
-    border: 1px solid rgba(239,68,68,0.25);
-    border-radius: 16px;
-    padding: 30px 24px;
-    text-align: center;
-    margin-bottom: 20px;
-}
-.result-card-uninfected {
-    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,150,105,0.05));
-    border: 1px solid rgba(16,185,129,0.25);
-    border-radius: 16px;
-    padding: 30px 24px;
-    text-align: center;
-    margin-bottom: 20px;
-}
-.result-emoji { font-size: 3.5rem; margin-bottom: 8px; }
-.result-label-text {
-    font-size: 1.9rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    margin: 4px 0;
-}
-.result-conf { font-size: 0.9rem; color: #94a3b8; margin-top: 6px; }
-
-/* Probability bars */
-.prob-row { margin-bottom: 14px; }
-.prob-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.82rem;
-    margin-bottom: 6px;
-    color: #94a3b8;
-    font-weight: 500;
-}
-.prob-bar-bg {
-    background: rgba(148,163,184,0.08);
-    border-radius: 100px;
-    height: 8px;
-    overflow: hidden;
-}
-.prob-bar-fill {
-    height: 100%;
-    border-radius: 100px;
-    transition: width 0.6s ease;
-}
-.pb-red   { background: linear-gradient(90deg,#f43f5e,#ec4899); }
-.pb-green { background: linear-gradient(90deg,#10b981,#06b6d4); }
-
-/* ── Artifacts ── */
-.artifact-card {
-    background: linear-gradient(145deg,#0d1117,#111827);
-    border: 1px solid rgba(148,163,184,0.08);
-    border-radius: 16px;
-    padding: 20px;
-    text-align: center;
-}
-.artifact-title {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+/* ── upload panel ── */
+.upload-hint {
+    color: #5a7a96;
+    font-size: 0.88rem;
+    line-height: 1.6;
     margin-bottom: 14px;
 }
+.drop-zone {
+    border: 2px dashed #1e3a5f;
+    border-radius: 14px;
+    padding: 52px 20px;
+    text-align: center;
+    color: #2a4a6a;
+}
+.drop-icon { font-size: 2.6rem; }
+.drop-text { margin-top: 10px; font-size: 0.92rem; color: #3a5a7a; }
+.drop-hint { font-size: 0.78rem; margin-top: 4px; color: #2a4060; }
 
-/* ── Footer ── */
-.footer-wrap {
-    margin-top: 56px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(148,163,184,0.08);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
+/* ── await panel ── */
+.await-box {
+    background: #0d1b2a;
+    border: 1px solid #1e3a5f;
+    border-radius: 14px;
+    padding: 60px 20px;
+    text-align: center;
+    color: #2a4a6a;
+    height: 100%;
 }
-.footer-left { font-size: 0.82rem; color: #334155; }
-.footer-left b { color: #475569; }
-.footer-right { font-size: 0.78rem; color: #1e293b; }
+.await-icon { font-size: 2.6rem; }
+.await-text { margin-top: 14px; font-size: 0.95rem; color: #4a6a8a; }
+.await-hint { font-size: 0.82rem; margin-top: 6px; color: #2a4060; }
 
-/* ── Streamlit widget overrides ── */
-div[data-testid="stFileUploader"] {
-    background: transparent !important;
+/* ── result cards ── */
+.res-bad {
+    background: linear-gradient(135deg, #1a0808, #2a1010);
+    border: 1px solid #7f1d1d;
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
 }
-div[data-testid="stFileUploader"] > div {
-    background: rgba(99,102,241,0.05) !important;
-    border: 1px dashed rgba(99,102,241,0.3) !important;
-    border-radius: 12px !important;
+.res-good {
+    background: linear-gradient(135deg, #081a0e, #102a16);
+    border: 1px solid #14532d;
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
 }
-.stButton > button {
-    background: linear-gradient(135deg,#6366f1,#8b5cf6) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 12px !important;
-    font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    padding: 14px 24px !important;
-    letter-spacing: 0.3px !important;
-    transition: opacity 0.2s !important;
-    width: 100% !important;
+.res-icon { font-size: 2.8rem; }
+.res-label { font-size: 1.6rem; font-weight: 800; margin: 8px 0 4px; }
+.res-conf { font-size: 0.9rem; color: #7a9ab8; }
+
+/* ── footer ── */
+.footer {
+    text-align: center;
+    color: #253545;
+    font-size: 0.8rem;
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 1px solid #111e2d;
 }
-.stButton > button:hover { opacity: 0.88 !important; }
-.stSpinner > div { border-top-color: #6366f1 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-#  PATHS & IMPORTS
-# ═══════════════════════════════════════════════════════════════
-MODEL_PATH          = Path("models/malaria_ml.joblib")
-CLASS_NAMES_PATH    = Path("artifacts/class_names.json")
-METRICS_PATH        = Path("artifacts/metrics.json")
-CONFUSION_MATRIX    = Path("artifacts/confusion_matrix.png")
-ROC_CURVE           = Path("artifacts/roc_curve.png")
+# ── Paths ────────────────────────────────────────────────────────────────────
+MODEL_PATH        = Path("models/malaria_ml.joblib")
+CLASS_NAMES_PATH  = Path("artifacts/class_names.json")
+METRICS_PATH      = Path("artifacts/metrics.json")
+CM_PATH           = Path("artifacts/confusion_matrix.png")
+ROC_PATH          = Path("artifacts/roc_curve.png")
 
 for p, label in [(MODEL_PATH, "Model"), (CLASS_NAMES_PATH, "Class names")]:
     if not p.exists():
@@ -386,7 +203,7 @@ for p, label in [(MODEL_PATH, "Model"), (CLASS_NAMES_PATH, "Class names")]:
         st.stop()
 
 try:
-    import json, joblib
+    import joblib
     import numpy as np
     from PIL import Image
     from src.config import FEATURE_IMAGE_SIZE
@@ -396,12 +213,14 @@ except Exception as e:
     st.error(f"Import error: {e}")
     st.stop()
 
-# ═══════════════════════════════════════════════════════════════
-#  LOADERS
-# ═══════════════════════════════════════════════════════════════
+# ── Cached loaders ───────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner="Loading model…")
 def load_model():
-    return joblib.load(MODEL_PATH)
+    try:
+        return joblib.load(MODEL_PATH)
+    except Exception as e:
+        st.error(f"Model load error: {e}")
+        return None
 
 @st.cache_data(show_spinner=False)
 def get_class_names():
@@ -413,282 +232,194 @@ def get_metrics():
         return json.loads(METRICS_PATH.read_text())
     return {}
 
-model       = load_model()
-class_names = get_class_names()
-metrics     = get_metrics()
-
-# ═══════════════════════════════════════════════════════════════
-#  INFERENCE
-# ═══════════════════════════════════════════════════════════════
-def run_inference(image: "Image.Image"):
+# ── Inference ────────────────────────────────────────────────────────────────
+def run_predict(model, class_names, image: "Image.Image"):
     img = image.convert("RGB").resize((FEATURE_IMAGE_SIZE, FEATURE_IMAGE_SIZE))
     feat = extract_features_from_image(img)
-    X = np.expand_dims(feat, 0)
-    idx   = int(model.predict(X)[0])
+    X = np.expand_dims(feat, axis=0)
+    idx = int(model.predict(X)[0])
     probs = model.predict_proba(X)[0]
     return class_names[idx], float(probs[idx]), probs
 
-# ═══════════════════════════════════════════════════════════════
-#  TOP BAR
-# ═══════════════════════════════════════════════════════════════
-st.markdown('<div class="top-bar"></div>', unsafe_allow_html=True)
+# ── Load ─────────────────────────────────────────────────────────────────────
+model       = load_model()
+if model is None:
+    st.stop()
+class_names = get_class_names()
+metrics     = get_metrics()
 
-# ═══════════════════════════════════════════════════════════════
-#  HERO
-# ═══════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
+# HERO
+# ════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<div class="hero-wrap">
-  <div class="hero-eyebrow">🔬 AI-Powered Medical Imaging</div>
-  <h1 class="hero-title">Malaria Cell Detection System</h1>
-  <p class="hero-sub">
-    Automated detection of <em>Plasmodium</em> parasites in blood smear images
-    using handcrafted features and classical machine learning.
-  </p>
-  <div class="badge-row">
-    <div class="badge"><span>🧠</span>Logistic Regression</div>
-    <div class="badge"><span>🩸</span>Blood Smear Analysis</div>
-    <div class="badge"><span>📊</span>NIH Dataset</div>
-    <div class="badge"><span>⚡</span>Real-time Inference</div>
-    <div class="badge"><span>🐍</span>scikit-learn · Python</div>
+<div class="hero">
+  <div class="hero-title">🔬 Malaria Cell Detection System</div>
+  <div class="hero-sub">
+    AI-powered blood smear analysis using classical machine learning
+    to detect <em>Plasmodium</em> malaria parasites in red blood cells.
+  </div>
+  <div>
+    <span class="badge">🧬 Classical ML</span>
+    <span class="badge">📊 Logistic Regression</span>
+    <span class="badge">🩸 Blood Smear Analysis</span>
+    <span class="badge">⚡ Real-time Inference</span>
+    <span class="badge">🗂 NIH Dataset</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-#  METRICS
-# ═══════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
+# METRICS
+# ════════════════════════════════════════════════════════════════════════════
 st.markdown('<div class="sec-title">📈 Model Performance</div>', unsafe_allow_html=True)
-
-m = metrics
-mc = [
-    ("mc-blue",   f"{m.get('accuracy',0)*100:.1f}%",   "Test Accuracy"),
-    ("mc-pink",   f"{m.get('precision',0)*100:.1f}%",  "Precision"),
-    ("mc-green",  f"{m.get('recall',0)*100:.1f}%",     "Recall"),
-    ("mc-orange", f"{m.get('f1_score',0)*100:.1f}%",   "F1-Score"),
-    ("mc-cyan",   f"{m.get('roc_auc',0)*100:.1f}%",    "ROC-AUC"),
-]
-cols = st.columns(5)
-for col, (cls, val, lbl) in zip(cols, mc):
+c1, c2, c3, c4, c5 = st.columns(5)
+for col, lbl, key in [
+    (c1, "Test Accuracy",  "accuracy"),
+    (c2, "Precision",      "precision"),
+    (c3, "Recall",         "recall"),
+    (c4, "F1-Score",       "f1_score"),
+    (c5, "ROC-AUC",        "roc_auc"),
+]:
+    val = f"{metrics.get(key, 0)*100:.1f}%"
     with col:
         st.markdown(f"""
-        <div class="metric-card {cls}">
-            <div class="metric-val">{val}</div>
-            <div class="metric-lbl">{lbl}</div>
+        <div class="mcard">
+          <div class="mcard-val">{val}</div>
+          <div class="mcard-lbl">{lbl}</div>
         </div>""", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-#  INFO CARDS
-# ═══════════════════════════════════════════════════════════════
-st.markdown('<div class="sec-title">🛠️ Project Overview</div>', unsafe_allow_html=True)
+# ════════════════════════════════════════════════════════════════════════════
+# INFO CARDS
+# ════════════════════════════════════════════════════════════════════════════
+st.markdown('<div class="sec-title">🛠️ About This Project</div>', unsafe_allow_html=True)
+ia, ib, ic = st.columns(3)
 
-c1, c2, c3 = st.columns(3)
-
-with c1:
+with ia:
     st.markdown("""
-    <div class="info-card">
-      <div class="info-card-head">
-        <div class="info-icon ic-purple">🧠</div>
-        How It Works
-      </div>
-      <ul class="info-list">
-        <li>Image resized to 32 × 32 px</li>
+    <div class="icard">
+      <div class="icard-title">🧠 Feature Extraction</div>
+      <ul>
         <li>RGB to grayscale conversion</li>
-        <li>Color histograms — 16 bins × 3 channels</li>
-        <li>Texture &amp; intensity percentile stats</li>
+        <li>Color histograms — 16 bins/channel</li>
+        <li>Texture &amp; intensity percentiles</li>
         <li>Logistic Regression classifier</li>
         <li>Softmax probability output</li>
       </ul>
     </div>""", unsafe_allow_html=True)
 
-with c2:
+with ib:
     st.markdown("""
-    <div class="info-card">
-      <div class="info-card-head">
-        <div class="info-icon ic-blue">⚙️</div>
-        Tech Stack
-      </div>
-      <ul class="info-list">
-        <li>Python 3.x</li>
-        <li>scikit-learn — model training &amp; evaluation</li>
-        <li>NumPy — feature computation</li>
-        <li>Pillow — image preprocessing</li>
+    <div class="icard">
+      <div class="icard-title">⚙️ Tech Stack</div>
+      <ul>
+        <li>Python · NumPy · scikit-learn</li>
+        <li>Pillow — image processing</li>
         <li>Joblib — model serialization</li>
         <li>Streamlit — web interface</li>
       </ul>
     </div>""", unsafe_allow_html=True)
 
-with c3:
+with ic:
     st.markdown("""
-    <div class="info-card">
-      <div class="info-card-head">
-        <div class="info-icon ic-rose">🩺</div>
-        Detection Classes
-      </div>
-      <ul class="info-list">
-        <li><b style="color:#fca5a5;">🔴 Parasitized</b> — Cell infected with <i>Plasmodium</i> falciparum malaria parasite</li>
-        <li><b style="color:#6ee7b7;">🟢 Uninfected</b> — Healthy red blood cell with no parasite present</li>
+    <div class="icard">
+      <div class="icard-title">📦 Dataset &amp; Split</div>
+      <ul>
         <li>Dataset: NIH / Kaggle Cell Images (~27,000 images)</li>
         <li>80 / 10 / 10 train–val–test split</li>
+        <li><b style="color:#fc8181;">Parasitized</b> — infected cell</li>
+        <li><b style="color:#68d391;">Uninfected</b> — healthy cell</li>
       </ul>
     </div>""", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-#  PREDICTION
-# ═══════════════════════════════════════════════════════════════
-st.markdown('<div class="sec-title">🖼️ Live Cell Analysis</div>', unsafe_allow_html=True)
+# ════════════════════════════════════════════════════════════════════════════
+# LIVE ANALYSIS
+# ════════════════════════════════════════════════════════════════════════════
+st.markdown('<div class="sec-title">🧪 Live Cell Analysis</div>', unsafe_allow_html=True)
 
-left, right = st.columns([1, 1], gap="large")
+left, right = st.columns(2, gap="large")
 
-# ── LEFT: uploader ──
 with left:
-    st.markdown('<div class="upload-outer">', unsafe_allow_html=True)
-    st.markdown("""
-    <p style="font-size:0.88rem;color:#64748b;margin:0 0 14px;">
-        Upload a microscopic blood smear image. The model extracts handcrafted
-        features and classifies the cell in milliseconds.
-    </p>""", unsafe_allow_html=True)
+    st.markdown('<p class="upload-hint">Upload a microscopic blood smear image. The model extracts handcrafted features and classifies the cell in milliseconds.</p>', unsafe_allow_html=True)
 
     uploaded = st.file_uploader(
-        "Upload cell image",
-        type=["png", "jpg", "jpeg"],
-        label_visibility="collapsed",
+        "Upload", type=["png", "jpg", "jpeg"],
+        label_visibility="collapsed"
     )
 
     if uploaded:
         image = Image.open(uploaded).convert("RGB")
-        st.image(image, caption="Uploaded Image", use_container_width=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-        analyze = st.button("🔍  Analyze Cell", type="primary")
+        st.image(image, caption="Uploaded cell image", use_container_width=True)
+        analyze = st.button("🔍 Analyze Cell", type="primary", use_container_width=True)
     else:
         st.markdown("""
-        <div class="drop-placeholder">
-            <div class="drop-icon">🩸</div>
-            <div class="drop-text">Drag &amp; drop a cell image here</div>
-            <div class="drop-hint">PNG · JPG · JPEG supported</div>
+        <div class="drop-zone">
+          <div class="drop-icon">🩸</div>
+          <div class="drop-text">Drag &amp; drop a cell image here</div>
+          <div class="drop-hint">PNG · JPG · JPEG supported</div>
         </div>""", unsafe_allow_html=True)
         analyze = False
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ── RIGHT: results ──
 with right:
-    st.markdown('<div class="result-outer">', unsafe_allow_html=True)
-
-    if not uploaded:
-        st.markdown("""
-        <div class="result-waiting">
-            <div class="result-waiting-icon">📊</div>
-            <div class="result-waiting-text" style="color:#475569;font-size:1rem;font-weight:600;">
-                Awaiting Analysis
-            </div>
-            <div style="color:#334155;font-size:0.83rem;">
-                Upload an image and click Analyze
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-    elif uploaded and not analyze:
-        st.markdown("""
-        <div class="result-waiting">
-            <div class="result-waiting-icon">👆</div>
-            <div class="result-waiting-text" style="color:#6366f1;font-size:1rem;font-weight:600;">
-                Ready to Analyze
-            </div>
-            <div style="color:#475569;font-size:0.83rem;">
-                Click the <b>Analyze Cell</b> button
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-    else:
-        with st.spinner("Analyzing cell…"):
+    if uploaded and analyze:
+        with st.spinner("Analyzing…"):
             try:
-                label, confidence, probs = run_inference(image)
-                is_para = label.lower() == "parasitized"
-
-                card_cls   = "result-card-parasitized" if is_para else "result-card-uninfected"
-                emoji      = "🦠" if is_para else "✅"
-                lbl_color  = "#fca5a5" if is_para else "#6ee7b7"
-                status_txt = "Parasite Detected" if is_para else "No Parasite Found"
+                label, conf, probs = run_predict(model, class_names, image)
+                parasitized = label.lower() == "parasitized"
+                card_cls  = "res-bad" if parasitized else "res-good"
+                icon      = "🦠" if parasitized else "✅"
+                color     = "#f87171" if parasitized else "#4ade80"
 
                 st.markdown(f"""
                 <div class="{card_cls}">
-                    <div class="result-emoji">{emoji}</div>
-                    <div class="result-label-text" style="color:{lbl_color};">{label}</div>
-                    <div style="font-size:0.85rem;color:#64748b;margin-top:4px;">{status_txt}</div>
-                    <div class="result-conf">Confidence: <b style="color:{lbl_color};">{confidence:.1%}</b></div>
+                  <div class="res-icon">{icon}</div>
+                  <div class="res-label" style="color:{color};">{label}</div>
+                  <div class="res-conf">Confidence: {conf:.1%}</div>
                 </div>""", unsafe_allow_html=True)
 
-                # Probability bars
-                st.markdown("""
-                <div style="font-size:0.82rem;font-weight:600;color:#64748b;
-                            text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
-                    Probability Breakdown
-                </div>""", unsafe_allow_html=True)
-
-                bar_colors = {"parasitized": "pb-red", "uninfected": "pb-green"}
-                for name, prob in zip(class_names, probs):
-                    pct  = f"{float(prob)*100:.1f}%"
-                    bcls = bar_colors.get(name.lower(), "pb-green")
-                    w    = int(float(prob) * 100)
-                    st.markdown(f"""
-                    <div class="prob-row">
-                        <div class="prob-header">
-                            <span>{name}</span><span>{pct}</span>
-                        </div>
-                        <div class="prob-bar-bg">
-                            <div class="prob-bar-fill {bcls}" style="width:{w}%"></div>
-                        </div>
-                    </div>""", unsafe_allow_html=True)
-
-                # Advisory
-                advisory_bg  = "rgba(239,68,68,0.06)"  if is_para else "rgba(16,185,129,0.06)"
-                advisory_bdr = "rgba(239,68,68,0.2)"   if is_para else "rgba(16,185,129,0.2)"
-                advisory_msg = (
-                    "⚠️ Possible infection detected. Please consult a medical professional for confirmation."
-                    if is_para else
-                    "✅ Cell appears healthy. This is an automated prediction — always confirm clinically."
-                )
-                st.markdown(f"""
-                <div style="background:{advisory_bg};border:1px solid {advisory_bdr};
-                            border-radius:10px;padding:12px 16px;margin-top:16px;
-                            font-size:0.82rem;color:#94a3b8;line-height:1.6;">
-                    {advisory_msg}
-                </div>""", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("**Probability breakdown:**")
+                for name, p in zip(class_names, probs):
+                    st.caption(name)
+                    st.progress(float(p))
+                    st.caption(f"{float(p):.2%}")
 
             except Exception as e:
                 st.error(f"Prediction error: {e}")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    elif uploaded and not analyze:
+        st.markdown("""
+        <div class="await-box">
+          <div class="await-icon">👆</div>
+          <div class="await-text">Click <b>Analyze Cell</b> to run prediction</div>
+        </div>""", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-#  EVALUATION ARTIFACTS
-# ═══════════════════════════════════════════════════════════════
-if CONFUSION_MATRIX.exists() or ROC_CURVE.exists():
+    else:
+        st.markdown("""
+        <div class="await-box">
+          <div class="await-icon">📊</div>
+          <div class="await-text">Awaiting Analysis</div>
+          <div class="await-hint">Upload an image and click Analyze</div>
+        </div>""", unsafe_allow_html=True)
+
+# ════════════════════════════════════════════════════════════════════════════
+# EVALUATION ARTIFACTS
+# ════════════════════════════════════════════════════════════════════════════
+if CM_PATH.exists() or ROC_PATH.exists():
     st.markdown('<div class="sec-title">📉 Evaluation Artifacts</div>', unsafe_allow_html=True)
-    ac1, ac2 = st.columns(2)
-    if CONFUSION_MATRIX.exists():
-        with ac1:
-            st.markdown('<div class="artifact-card">', unsafe_allow_html=True)
-            st.markdown('<div class="artifact-title">Confusion Matrix</div>', unsafe_allow_html=True)
-            st.image(str(CONFUSION_MATRIX), use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-    if ROC_CURVE.exists():
-        with ac2:
-            st.markdown('<div class="artifact-card">', unsafe_allow_html=True)
-            st.markdown('<div class="artifact-title">ROC Curve</div>', unsafe_allow_html=True)
-            st.image(str(ROC_CURVE), use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+    e1, e2 = st.columns(2)
+    if CM_PATH.exists():
+        with e1:
+            st.image(str(CM_PATH), caption="Confusion Matrix", use_container_width=True)
+    if ROC_PATH.exists():
+        with e2:
+            st.image(str(ROC_PATH), caption="ROC Curve", use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════
-#  FOOTER
-# ═══════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
+# FOOTER
+# ════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<div class="footer-wrap">
-    <div class="footer-left">
-        Built with <b>Python</b> · <b>scikit-learn</b> · <b>Streamlit</b>
-        &nbsp;·&nbsp; Dataset: NIH Cell Images for Detecting Malaria
-    </div>
-    <div class="footer-right">
-        Classical ML &nbsp;·&nbsp; No deep learning &nbsp;·&nbsp; Open Source
-    </div>
+<div class="footer">
+  Built with Python · scikit-learn · Streamlit &nbsp;·&nbsp;
+  NIH Cell Images Dataset &nbsp;·&nbsp; Classical ML — no deep learning
 </div>
 """, unsafe_allow_html=True)
