@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from sklearn.model_selection import train_test_split
 
 from src.config import TrainConfig
 
@@ -34,6 +33,7 @@ def extract_features_from_image(image: Image.Image) -> np.ndarray:
 
 
 def load_dataset_splits(config: TrainConfig):
+    from sklearn.model_selection import train_test_split
     data_dir = Path(config.data_dir)
     if not data_dir.exists():
         raise FileNotFoundError(
