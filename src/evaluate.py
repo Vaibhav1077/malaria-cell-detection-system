@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-_matplotlib_cache_dir = Path("artifacts") / "matplotlib-cache"
+_matplotlib_cache_dir = Path("/tmp") / "matplotlib-cache"
 _matplotlib_cache_dir.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("MPLCONFIGDIR", str(_matplotlib_cache_dir))
 
