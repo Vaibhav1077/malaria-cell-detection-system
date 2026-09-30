@@ -9,16 +9,26 @@ from src.config import TrainConfig
 
 
 def extract_features_from_image(image: Image.Image) -> np.ndarray:
+    """
+    Feature extraction: flat grayscale pixels + color stats + color histograms + texture stats.
+    NOTE: Keep this consistent with whatever the saved model was trained on.
+    """
     rgb = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
     gray = np.asarray(image.convert("L"), dtype=np.float32) / 255.0
 
+    # Raw grayscale pixels (image_size * image_size features)
     flat_gray = gray.flatten()
+
+    # Color mean + std per channel (6 features)
     color_stats = np.concatenate([rgb.mean(axis=(0, 1)), rgb.std(axis=(0, 1))])
+
+    # Histogram per channel, 16 bins (48 features)
     hist_features = []
     for channel in range(3):
         hist, _ = np.histogram(rgb[:, :, channel], bins=16, range=(0.0, 1.0), density=True)
         hist_features.append(hist)
 
+    # Grayscale texture stats (5 features)
     texture_stats = np.array(
         [
             float(gray.mean()),
@@ -29,6 +39,7 @@ def extract_features_from_image(image: Image.Image) -> np.ndarray:
         ],
         dtype=np.float32,
     )
+
     return np.concatenate([flat_gray, color_stats, *hist_features, texture_stats]).astype(np.float32)
 
 

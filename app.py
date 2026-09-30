@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import gc
 import os
 from pathlib import Path
 
+# Limit CPU threads to reduce resource usage on Streamlit Cloud
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
 import streamlit as st
 
@@ -49,9 +50,7 @@ except Exception as e:
 @st.cache_resource(show_spinner="Loading model...")
 def load_model():
     try:
-        model = joblib.load(MODEL_PATH)
-        gc.collect()
-        return model
+        return joblib.load(MODEL_PATH)
     except Exception as e:
         st.error(f"Model load error: {e}")
         return None
@@ -77,7 +76,7 @@ def predict_image(model, class_names: list, image: Image.Image):
     return label, confidence, probabilities
 
 
-def show_prediction(label, confidence, probabilities, class_names):
+def show_prediction(label: str, confidence: float, probabilities, class_names: list):
     if label.lower() == "parasitized":
         st.error(f"Prediction: **{label}**")
     else:
@@ -89,6 +88,7 @@ def show_prediction(label, confidence, probabilities, class_names):
         st.write(f"- {name}: `{float(prob):.2%}`")
 
 
+# Load model and class names once (cached)
 model = load_model()
 if model is None:
     st.stop()
@@ -108,4 +108,3 @@ if uploaded_file is not None:
                 show_prediction(label, confidence, probabilities, class_names)
             except Exception as e:
                 st.error(f"Prediction error: {e}")
-        gc.collect()
